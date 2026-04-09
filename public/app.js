@@ -55,32 +55,26 @@ function setBadge(status) {
 
 // ── Current prices ────────────────────────────────────────────────────────────
 async function loadCurrentPrices() {
-  // Try live API first, fall back to DB latest
+  // Try live API (always via backend, never direct from client)
   try {
-    const r = await fetch('/api/current?zip_code=33129&radius_km=5');
+    const r = await fetch('/api/current?zip_code=33129&radius=5');
     if (r.ok) {
       const data = await r.json();
       if (Array.isArray(data) && data.length > 0) {
         applyPriceCards(data, 'live');
+        renderStations(data);
         return;
-      }
-      // Single object with fuel_type arrays
-      if (data.diesel || data.supere5 || data.e5) {
-        const mapped = [];
-        if (data.diesel)       mapped.push({ fuel_type: 'diesel',  ...data.diesel });
-        if (data.supere5)      mapped.push({ fuel_type: 'supere5', ...data.supere5 });
-        if (data.e5)           mapped.push({ fuel_type: 'supere5', ...data.e5 });
-        if (mapped.length) { applyPriceCards(mapped, 'live'); return; }
       }
     }
   } catch { /* fall through */ }
 
-  // Fallback: latest from DB
+  // Fallback: latest from DB (no station detail available)
   try {
     const r = await fetch('/api/latest?zip_code=33129');
     if (r.ok) {
       const data = await r.json();
       applyPriceCards(data, 'db');
+      hideStations();
     }
   } catch {
     setBadge('offline');
@@ -98,7 +92,9 @@ function applyPriceCards(rows, source) {
     el('diesel-min').textContent = fmtPrice(diesel.min_price);
     el('diesel-max').textContent = fmtPrice(diesel.max_price);
     el('diesel-stations').textContent = diesel.station_count ?? '–';
-    el('diesel-time').textContent = diesel.sampled_at ? 'Stand: ' + fmtDate(diesel.sampled_at) : '';
+    el('diesel-time').textContent = diesel.sampled_at
+      ? 'Stand: ' + fmtDate(diesel.sampled_at)
+      : source === 'live' ? 'Live-Daten' : '';
     setTrend('diesel-trend', diesel.avg_price);
   }
   if (super5) {
@@ -106,11 +102,67 @@ function applyPriceCards(rows, source) {
     el('super-min').textContent = fmtPrice(super5.min_price);
     el('super-max').textContent = fmtPrice(super5.max_price);
     el('super-stations').textContent = super5.station_count ?? '–';
-    el('super-time').textContent = super5.sampled_at ? 'Stand: ' + fmtDate(super5.sampled_at) : '';
+    el('super-time').textContent = super5.sampled_at
+      ? 'Stand: ' + fmtDate(super5.sampled_at)
+      : source === 'live' ? 'Live-Daten' : '';
     setTrend('super-trend', super5.avg_price);
   }
 
   el('last-updated').textContent = 'Aktualisiert: ' + new Date().toLocaleTimeString('de-DE');
+}
+
+// ── Stations breakdown ────────────────────────────────────────────────────────
+let stationsVisible = true;
+
+function renderStations(rows) {
+  const section = el('stations-section');
+  const diesel = rows.find(r => r.fuel_type === 'diesel');
+  const super5 = rows.find(r => r.fuel_type === 'supere5');
+
+  if (!diesel?.stations && !super5?.stations) { hideStations(); return; }
+
+  section.style.display = '';
+  el('stations-time').textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+
+  if (diesel?.stations) renderStationList('stations-diesel', diesel.stations);
+  if (super5?.stations) renderStationList('stations-super',  super5.stations);
+}
+
+function renderStationList(containerId, stations) {
+  // Sort by price ascending
+  const sorted = [...stations].sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+  const minPrice = parseFloat(sorted[0]?.price);
+
+  el(containerId).innerHTML = sorted.map((s, i) => {
+    const price = parseFloat(s.price);
+    const isCheapest = i === 0;
+    // Clean up address: collapse multiple spaces
+    const address = (s.address || '').replace(/\s{2,}/g, ' ').trim();
+    return `
+      <div class="station-row">
+        <div>
+          <div class="station-name">${escHtml(s.name)}</div>
+          <div class="station-address">${escHtml(address)}</div>
+          <div class="station-dist">${escHtml(s.distance)}</div>
+        </div>
+        <div class="station-right">
+          <div class="station-price">${price.toFixed(3).replace('.', ',')}</div>
+          ${isCheapest ? '<div class="station-cheapest">Günstigste</div>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function hideStations() {
+  el('stations-section').style.display = 'none';
+}
+
+function escHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function setTrend(elId, currentAvg) {
@@ -418,6 +470,13 @@ function initControls() {
       else                    state.showSuper  = btn.classList.contains('active');
       renderChart();
     });
+  });
+
+  // Stations collapse
+  el('stations-toggle-btn').addEventListener('click', () => {
+    stationsVisible = !stationsVisible;
+    el('stations-grid').style.display = stationsVisible ? '' : 'none';
+    el('stations-toggle-btn').textContent = stationsVisible ? 'Einklappen' : 'Ausklappen';
   });
 
   // Table expand

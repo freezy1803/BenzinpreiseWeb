@@ -94,26 +94,58 @@ app.get('/api/stats', async (req, res) => {
 });
 
 // ── Proxy to external live-prices API ────────────────────────────────────────
+// Fetches both fuel types in parallel, computes min/avg/max from station list,
+// and returns a unified array matching the shape of /api/latest rows plus a
+// `stations` field for the individual station breakdown.
 app.get('/api/current', async (req, res) => {
-  const apiBase = process.env.PRICES_API_URL;
-  const apiPath = process.env.PRICES_API_PATH || '/prices';
-  const paramZip = process.env.PRICES_API_PARAM_ZIP || 'zip_code';
-  const paramRadius = process.env.PRICES_API_PARAM_RADIUS || 'radius_km';
-  const { zip_code = '33129', radius_km = '5' } = req.query;
+  const apiBase = process.env.PRICES_API_URL || 'http://einstein.freezy.xyz:6976';
+  const { zip_code = '33129', radius = '5' } = req.query;
 
-  if (!apiBase) {
-    return res.status(503).json({ error: 'External API not configured (PRICES_API_URL missing)' });
-  }
+  const fuelTypes = ['diesel', 'supere5'];
 
   try {
-    const response = await axios.get(`${apiBase}${apiPath}`, {
-      params: {
-        [paramZip]: zip_code,
-        [paramRadius]: parseInt(radius_km),
-      },
-      timeout: 6000,
-    });
-    res.json(response.data);
+    const results = await Promise.all(
+      fuelTypes.map(fuel_type =>
+        axios
+          .get(`${apiBase}/api/prices`, {
+            params: { zip_code, fuel_type, radius: parseInt(radius) },
+            timeout: 7000,
+          })
+          .then(r => ({ fuel_type, data: r.data }))
+          .catch(err => {
+            console.error(`External API error (${fuel_type}):`, err.message);
+            return { fuel_type, data: null };
+          })
+      )
+    );
+
+    const output = results
+      .filter(({ data }) => data && Array.isArray(data.stations) && data.stations.length > 0)
+      .map(({ fuel_type, data }) => {
+        const prices = data.stations
+          .map(s => parseFloat(s.price))
+          .filter(p => !isNaN(p));
+
+        const min_price = Math.min(...prices).toFixed(3);
+        const avg_price = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(3);
+        const max_price = Math.max(...prices).toFixed(3);
+
+        return {
+          fuel_type,
+          station_count: data.station_count,
+          min_price,
+          avg_price,
+          max_price,
+          stations: data.stations,         // [{name, price, address, distance}]
+          coordinates: data.search_parameters?.coordinates ?? null,
+        };
+      });
+
+    if (!output.length) {
+      return res.status(502).json({ error: 'External API returned no usable data' });
+    }
+
+    res.json(output);
   } catch (err) {
     console.error('External API error:', err.message);
     res.status(502).json({ error: 'External API unavailable', detail: err.message });

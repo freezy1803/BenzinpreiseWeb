@@ -95,6 +95,31 @@
       </div>
     </section>
 
+    <!-- ── Station breakdown ─────────────────────────────────────────── -->
+    <section class="section" id="stations-section" style="display:none">
+      <div class="section-header">
+        <div class="section-label">
+          Tankstellen
+          <span class="period-badge" id="stations-time"></span>
+        </div>
+        <button class="btn-link" id="stations-toggle-btn">Einklappen</button>
+      </div>
+      <div class="stations-grid" id="stations-grid">
+        <div class="stations-col">
+          <div class="stations-col-header">
+            <span class="stat-dot stat-dot--diesel"></span>Diesel
+          </div>
+          <div id="stations-diesel"></div>
+        </div>
+        <div class="stations-col">
+          <div class="stations-col-header">
+            <span class="stat-dot stat-dot--super"></span>Super E5
+          </div>
+          <div id="stations-super"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- ── Chart ──────────────────────────────────────────────────────── -->
     <section class="section">
       <div class="section-header">
