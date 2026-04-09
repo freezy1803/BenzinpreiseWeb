@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Benzinpreise · PLZ 33129</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header>
+    <div class="header-inner">
+      <div class="header-title">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 22V8l9-6 9 6v14"/>
+          <path d="M9 22V12h6v10"/>
+          <path d="M19 8h2v4l-2 1V8z"/>
+          <circle cx="19" cy="14" r="1"/>
+        </svg>
+        <div>
+          <h1>Benzinpreise</h1>
+          <span class="subtitle">PLZ 33129 &middot; Radius 5 km</span>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div id="live-badge" class="badge badge--offline">
+          <span class="badge-dot"></span>
+          <span id="live-label">Verbinde&hellip;</span>
+        </div>
+        <div id="last-updated" class="last-updated"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ── Current price cards ────────────────────────────────────────── -->
+    <section class="section">
+      <div class="section-label">Aktuelle Preise</div>
+      <div class="price-cards">
+
+        <div class="price-card price-card--diesel" id="card-diesel">
+          <div class="card-badge">Diesel</div>
+          <div class="card-body">
+            <div class="card-price">
+              <span class="price-main" id="diesel-avg">–</span>
+              <span class="price-unit">€/L</span>
+            </div>
+            <div class="card-trend" id="diesel-trend"></div>
+          </div>
+          <div class="card-range">
+            <div class="range-item">
+              <span class="range-label">Min</span>
+              <span class="range-value" id="diesel-min">–</span>
+            </div>
+            <div class="range-sep">→</div>
+            <div class="range-item">
+              <span class="range-label">Max</span>
+              <span class="range-value" id="diesel-max">–</span>
+            </div>
+            <div class="range-stations">
+              <span id="diesel-stations">–</span> Stationen
+            </div>
+          </div>
+          <div class="card-time" id="diesel-time"></div>
+        </div>
+
+        <div class="price-card price-card--super" id="card-super">
+          <div class="card-badge">Super E5</div>
+          <div class="card-body">
+            <div class="card-price">
+              <span class="price-main" id="super-avg">–</span>
+              <span class="price-unit">€/L</span>
+            </div>
+            <div class="card-trend" id="super-trend"></div>
+          </div>
+          <div class="card-range">
+            <div class="range-item">
+              <span class="range-label">Min</span>
+              <span class="range-value" id="super-min">–</span>
+            </div>
+            <div class="range-sep">→</div>
+            <div class="range-item">
+              <span class="range-label">Max</span>
+              <span class="range-value" id="super-max">–</span>
+            </div>
+            <div class="range-stations">
+              <span id="super-stations">–</span> Stationen
+            </div>
+          </div>
+          <div class="card-time" id="super-time"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Chart ──────────────────────────────────────────────────────── -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-label">Preisverlauf</div>
+        <div class="chart-controls">
+          <div class="time-btns" id="time-btns">
+            <button class="time-btn" data-days="1">24h</button>
+            <button class="time-btn" data-days="7">7T</button>
+            <button class="time-btn active" data-days="30">30T</button>
+            <button class="time-btn" data-days="90">3M</button>
+            <button class="time-btn" data-days="365">1J</button>
+          </div>
+          <div class="fuel-toggles">
+            <button class="toggle-btn toggle-btn--diesel active" data-fuel="diesel">
+              <span class="toggle-dot"></span>Diesel
+            </button>
+            <button class="toggle-btn toggle-btn--super active" data-fuel="supere5">
+              <span class="toggle-dot"></span>Super E5
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <div id="chart-loading" class="chart-loading">
+          <div class="spinner"></div>
+          <span>Lade Daten&hellip;</span>
+        </div>
+        <canvas id="priceChart"></canvas>
+      </div>
+    </section>
+
+    <!-- ── Selected span info ─────────────────────────────────────────── -->
+    <section class="section" id="span-section" style="display:none">
+      <div class="section-label">Ausgewählter Datenpunkt</div>
+      <div class="span-info" id="span-info">
+        <div class="span-card span-card--diesel">
+          <div class="span-title">Diesel</div>
+          <div class="span-grid">
+            <div><span class="sl">Zeitpunkt</span><span class="sv" id="sp-diesel-time">–</span></div>
+            <div><span class="sl">Minimum</span><span class="sv" id="sp-diesel-min">–</span></div>
+            <div><span class="sl">Durchschnitt</span><span class="sv" id="sp-diesel-avg">–</span></div>
+            <div><span class="sl">Maximum</span><span class="sv" id="sp-diesel-max">–</span></div>
+            <div><span class="sl">Stationen</span><span class="sv" id="sp-diesel-sta">–</span></div>
+          </div>
+        </div>
+        <div class="span-card span-card--super">
+          <div class="span-title">Super E5</div>
+          <div class="span-grid">
+            <div><span class="sl">Zeitpunkt</span><span class="sv" id="sp-super-time">–</span></div>
+            <div><span class="sl">Minimum</span><span class="sv" id="sp-super-min">–</span></div>
+            <div><span class="sl">Durchschnitt</span><span class="sv" id="sp-super-avg">–</span></div>
+            <div><span class="sl">Maximum</span><span class="sv" id="sp-super-max">–</span></div>
+            <div><span class="sl">Stationen</span><span class="sv" id="sp-super-sta">–</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Statistics ─────────────────────────────────────────────────── -->
+    <section class="section" id="stats-section">
+      <div class="section-label">Statistik <span id="stats-period" class="period-badge">30 Tage</span></div>
+      <div class="stats-grid">
+        <div class="stat-card stat-card--diesel">
+          <div class="stat-fuel-label">
+            <span class="stat-dot stat-dot--diesel"></span>Diesel
+          </div>
+          <div class="stat-row">
+            <div class="stat-item">
+              <div class="stat-label">Minimum</div>
+              <div class="stat-value" id="st-diesel-min">–</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Durchschnitt</div>
+              <div class="stat-value stat-value--main" id="st-diesel-avg">–</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Maximum</div>
+              <div class="stat-value" id="st-diesel-max">–</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Messungen</div>
+              <div class="stat-value" id="st-diesel-pts">–</div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card stat-card--super">
+          <div class="stat-fuel-label">
+            <span class="stat-dot stat-dot--super"></span>Super E5
+          </div>
+          <div class="stat-row">
+            <div class="stat-item">
+              <div class="stat-label">Minimum</div>
+              <div class="stat-value" id="st-super-min">–</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Durchschnitt</div>
+              <div class="stat-value stat-value--main" id="st-super-avg">–</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Maximum</div>
+              <div class="stat-value" id="st-super-max">–</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Messungen</div>
+              <div class="stat-value" id="st-super-pts">–</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Recent data table ──────────────────────────────────────────── -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-label">Letzte Einträge</div>
+        <button class="btn-link" id="table-toggle">Alle anzeigen</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Zeitpunkt</th>
+              <th>Kraftstoff</th>
+              <th>Min</th>
+              <th>Ø</th>
+              <th>Max</th>
+              <th>Stationen</th>
+            </tr>
+          </thead>
+          <tbody id="data-tbody"></tbody>
+        </table>
+        <div id="table-empty" class="table-empty" style="display:none">Keine Daten vorhanden.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Daten: PLZ 33129 · Radius 5 km</span>
+    <span id="footer-refresh">Aktualisiert alle 5 Min.</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
