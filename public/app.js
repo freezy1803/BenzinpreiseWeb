@@ -139,13 +139,9 @@ function setCheapestCard(fuel, stations) {
   const cheapest = sorted[0];
   if (!cheapest) return;
 
-  // Strip chain prefix ("Classic | Oststraße." → "Oststraße.")
-  // or just use the full name if there's no pipe
-  const rawName = cheapest.name ?? '';
-  const name = rawName.includes('|') ? rawName.split('|').slice(1).join('|').trim() : rawName.trim();
-
   el(`${fuel}-cheapest`).style.display = '';
-  el(`${fuel}-cheapest-name`).textContent = name;
+  el(`${fuel}-cheapest-name`).textContent = cheapest.name ?? '';
+  el(`${fuel}-cheapest-dist`).textContent = cheapest.distance ? cheapest.distance + ' entfernt' : '';
   el(`${fuel}-cheapest-price`).textContent = parseFloat(cheapest.price).toFixed(3).replace('.', ',') + ' €';
 }
 
