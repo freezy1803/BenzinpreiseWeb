@@ -124,8 +124,29 @@ function renderStations(rows) {
   section.style.display = '';
   el('stations-time').textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
 
-  if (diesel?.stations) renderStationList('stations-diesel', diesel.stations);
-  if (super5?.stations) renderStationList('stations-super',  super5.stations);
+  if (diesel?.stations) {
+    renderStationList('stations-diesel', diesel.stations);
+    setCheapestCard('diesel', diesel.stations);
+  }
+  if (super5?.stations) {
+    renderStationList('stations-super', super5.stations);
+    setCheapestCard('super', super5.stations);
+  }
+}
+
+function setCheapestCard(fuel, stations) {
+  const sorted = [...stations].sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+  const cheapest = sorted[0];
+  if (!cheapest) return;
+
+  // Strip chain prefix ("Classic | Oststraße." → "Oststraße.")
+  // or just use the full name if there's no pipe
+  const rawName = cheapest.name ?? '';
+  const name = rawName.includes('|') ? rawName.split('|').slice(1).join('|').trim() : rawName.trim();
+
+  el(`${fuel}-cheapest`).style.display = '';
+  el(`${fuel}-cheapest-name`).textContent = name;
+  el(`${fuel}-cheapest-price`).textContent = parseFloat(cheapest.price).toFixed(3).replace('.', ',') + ' €';
 }
 
 function renderStationList(containerId, stations) {
@@ -155,6 +176,8 @@ function renderStationList(containerId, stations) {
 
 function hideStations() {
   el('stations-section').style.display = 'none';
+  el('diesel-cheapest').style.display = 'none';
+  el('super-cheapest').style.display = 'none';
 }
 
 function escHtml(str) {

@@ -298,10 +298,71 @@ main {
 }
 
 .card-time {
-  margin-top: 10px;
+  margin-top: 8px;
   font-size: 0.72rem;
   color: var(--text-faint);
 }
+
+.card-cheapest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+}
+
+.price-card--diesel .card-cheapest {
+  background: var(--diesel-glow);
+  border-color: var(--diesel-dim);
+}
+.price-card--super .card-cheapest {
+  background: var(--super-glow);
+  border-color: var(--super-dim);
+}
+
+.cheapest-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.price-card--diesel .cheapest-icon { color: var(--diesel); }
+.price-card--super  .cheapest-icon { color: var(--super);  }
+
+.cheapest-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cheapest-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+}
+
+.cheapest-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.cheapest-price {
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+.price-card--diesel .cheapest-price { color: var(--diesel); }
+.price-card--super  .cheapest-price { color: var(--super);  }
 
 /* ── Stations section ────────────────────────────────────────────────────── */
 .stations-grid {
